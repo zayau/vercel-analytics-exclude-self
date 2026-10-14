@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Self-visit exclusion demo</title>
+  </head>
+  <body>
+    <h1>Self-visit exclusion</h1>
+    <p id="status"></p>
+
+    <p>
+      <a href="?exclude-self-visits=true">Exclude this browser</a>
+      ·
+      <a href="?exclude-self-visits=false">Allow this browser</a>
+    </p>
+
+    <script type="module">
+      import {
+        applySelfVisitPreferenceFromUrl,
+        createBeforeSend,
+        shouldExcludeSelfVisits,
+      } from "../../src/index.js";
+
+      applySelfVisitPreferenceFromUrl();
+
+      document.querySelector("#status").textContent = shouldExcludeSelfVisits()
+        ? "Visits from this browser are excluded."
+        : "Visits from this browser are allowed.";
+
+      window.va =
+        window.va ||
+        function (...args) {
+          (window.vaq = window.vaq || []).push(args);
+        };
+
+      window.va("beforeSend", createBeforeSend());
+
+      const script = document.createElement("script");
+      script.src = "https://va.vercel-scripts.com/v1/script.debug.js";
+      document.head.append(script);
+    </script>
+  </body>
+</html>
