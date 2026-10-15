@@ -288,3 +288,44 @@ test("preserves the URL when saving the preference fails", () => {
 
   assert.equal(applied, false);
 });
+
+test("does nothing when browser URL APIs are unavailable", () => {
+  const applied = applySelfVisitPreferenceFromUrl({
+    location: null,
+    history: null,
+  });
+
+  assert.equal(applied, false);
+});
+
+test("handles a blocked localStorage property", async () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+
+  try {
+    Object.defineProperty(globalThis, "localStorage", {
+      configurable: true,
+      get() {
+        throw new Error("Storage access denied");
+      },
+    });
+
+    const helper = await import("../src/index.js?blocked-storage");
+
+    assert.equal(helper.shouldExcludeSelfVisits(), false);
+    assert.equal(helper.enableSelfVisitExclusion(), false);
+    assert.equal(helper.disableSelfVisitExclusion(), false);
+
+    const event = {
+      type: "event",
+      url: "https://example.com/",
+    };
+
+    assert.equal(helper.createBeforeSend()(event), event);
+  } finally {
+    if (original) {
+      Object.defineProperty(globalThis, "localStorage", original);
+    } else {
+      delete globalThis.localStorage;
+    }
+  }
+});
