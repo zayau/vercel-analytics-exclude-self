@@ -1,0 +1,33 @@
+name: Checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Tests and types
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm and Node.js
+        uses: pnpm/setup@v3
+        with:
+          version: 12.3.4
+          runtime: node@24
+          require-lockfile: true
+          cache: true
+
+      - name: Run runtime tests
+        run: pnpm test
+
+      - name: Check TypeScript declarations
+        run: pnpm typecheck
