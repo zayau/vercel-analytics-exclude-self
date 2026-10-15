@@ -3,12 +3,20 @@
   "version": "0.1.0",
   "description": "Exclude your own visits from Vercel Web Analytics.",
   "type": "module",
-  "exports": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    "types": "./src/index.d.ts",
+    "default": "./src/index.js"
+  },
   "files": [
     "src"
   ],
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "typecheck": "tsc -p tsconfig.json"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
 }
