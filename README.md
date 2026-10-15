@@ -37,15 +37,13 @@ createRoot(document.getElementById("root")).render(
 );
 ```
 
-If you already use `beforeSend`, combine your existing logic with this filter rather than replacing it.
-
 ## Plain HTML
 
 The runnable example is in `examples/vanilla/index.html`.
 
 It imports the helper directly from the source, applies the URL preference, registers the filter through `window.va`, and then loads Vercel’s development script.
 
-From the repository root:
+To run the demo, clone this repository and run the following from its root directory:
 
 ```sh
 python3 -m http.server 4174 --bind 127.0.0.1
@@ -87,6 +85,41 @@ disableSelfVisitExclusion();
 
 The filter checks the saved preference for every event, so changes take effect without recreating the callback.
 
+## Combining with an existing filter
+
+Run the self-visit filter first, then pass allowed events to your existing callback:
+
+```js
+import { createBeforeSend } from "vercel-analytics-exclude-self";
+
+const excludeSelfVisits = createBeforeSend();
+
+function existingBeforeSend(event) {
+  const url = new URL(event.url);
+  url.searchParams.delete("token");
+
+  return { ...event, url: url.toString() };
+}
+
+function beforeSend(event) {
+  const allowedEvent = excludeSelfVisits(event);
+
+  if (allowedEvent === null) {
+    return null;
+  }
+
+  return existingBeforeSend(allowedEvent);
+}
+```
+
+Pass the combined callback to your analytics component:
+
+```jsx
+<Analytics beforeSend={beforeSend} />
+```
+
+Here, `existingBeforeSend` is an example that removes a query parameter from reported URLs. Replace it with your own callback. Its return value, whether a modified event or `null`, is preserved.
+
 ## API
 
 | Function                            | Result                                                                         |
@@ -107,6 +140,8 @@ The preference applies to one browser profile and one origin: the same protocol,
 
 localStorage normally survives browser restarts. Clearing site data removes the preference, and private browsing storage is temporary. See [MDN’s localStorage documentation](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage).
 
+If storage cannot be read, this helper allows analytics events through. If storage cannot be written or cleared, the corresponding operation returns `false`.
+
 ### Safari
 
 With Intelligent Tracking Prevention enabled, Safari can delete script-writable storage, including localStorage, after seven days of Safari use without interaction with the site. This is not simply seven calendar days.
@@ -115,15 +150,16 @@ Clicks, taps, and keyboard input count as interaction; scrolling alone does not.
 
 See [WebKit’s storage policy announcement](https://webkit.org/blog/10218/full-third-party-cookie-blocking-and-more/) and [tracking prevention documentation](https://webkit.org/tracking-prevention/).
 
-If storage cannot be read, this helper allows analytics events through. If storage cannot be written or cleared, the corresponding operation returns `false`.
-
 ## Tests
 
 ```sh
 npm test
+npm run typecheck
 ```
 
 Tests use Node’s built-in test runner and cover preference changes, event filtering, URL cleanup, and storage failures.
+
+GitHub Actions runs both checks on pushes and pull requests.
 
 ## License
 
